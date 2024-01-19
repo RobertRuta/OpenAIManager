@@ -1,0 +1,6 @@
+**__pycache__/
+.venv/
+
+playground/OpenAIManager_demo.ipynb
+.env
+threads_db*
