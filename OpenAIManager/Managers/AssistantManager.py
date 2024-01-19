@@ -91,6 +91,8 @@ class ThreadsManager:
         TODO: fill in docstring
         """
         self.assistant_manager = assistant_manager
+        self.local_thread_dict = self.read_shelf_to_dict()
+        self.local_thread_id_list = self.get_thread_id_list_from_shelf()
 
 
     def get_thread(self, username):
@@ -135,9 +137,13 @@ class ThreadsManager:
         
         else:
             print(f"Found thread for {username} with thread ID {thread_id} on shelf.")
-            thread = self.assistant_manager.client.beta.threads.retrieve(thread_id)
+            thread = self.get_thread_from_openai(thread_id)
 
         return thread
+    
+
+    def get_thread_from_openai(self, thread_id):
+        return self.assistant_manager.client.beta.threads.retrieve(thread_id)
     
 
     def find_thread_on_shelf(self, username):
@@ -170,8 +176,24 @@ class ThreadsManager:
             for key in threads_shelf:
                 shelf_dict[key] = threads_shelf[key]
         
+        self.local_thread_dict = shelf_dict
         return shelf_dict
     
+
+    def get_message_history(self, thread):
+        """
+        Gets the message history associated with a thread.
+
+        :return: History of messages as a list. Message at index 0 is the latest message.
+        """
+        raw_msg_list = self.assistant_manager.client.beta.threads.messages.list(thread.id)
+        return [msg.content[0].text.value for msg in raw_msg_list]
+    
+
+    def get_thread_id_list_from_shelf(self):
+        thread_dict = self.read_shelf_to_dict()
+        return [thread_id for username, thread_id in thread_dict.items()]
+
 
     def __repr__(self) -> str:
         shelf_dict = self.read_shelf_to_dict()
