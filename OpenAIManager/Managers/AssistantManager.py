@@ -2,6 +2,9 @@ from ..Helpers import AssistantParams, Message
 from openai import OpenAI
 import shelve
 import time
+import requests
+from openai.types.beta.thread import Thread # the Thread type
+import pandas as pd
 
 
 class AssistantManager():
@@ -31,16 +34,7 @@ class AssistantManager():
                              + "If you would like to create an assistant, please provide its parameters via \'assistant_params\'."
                              + "Otherwise, specify an existing assistant using \'assistant_id\'.")
         
-        self.thread_manager = ThreadsManager(self)
-    
-
-    def get_thread(self, message: Message):
-        """
-        TODO: fill in docstring
-        """
-
-        self.thread = message.author
-        return self.thread
+        self.threads = ThreadsManager(self)
     
 
     def send_message(self, message: Message):
@@ -91,30 +85,61 @@ class ThreadsManager:
         TODO: fill in docstring
         """
         self.assistant_manager = assistant_manager
-        self.local_thread_dict = self.read_shelf_to_dict()
+        self.local_threads = self.read_shelf_to_dict()
         self.local_thread_id_list = self.get_thread_id_list_from_shelf()
 
 
-    def get_thread(self, username):
+    def get_thread_remote(self, thread_id: str) -> Thread:
         """
         TODO: fill in docstring
         """
-        thread = self.get_thread_from_shelf(username)
-
-        if thread is None:
-            thread = self.create_thread(username)
+        thread: Thread = None
+        try:
+            thread = self.assistant_manager.client.beta.threads.retrieve(thread_id)
+        except Exception as e:
+            print("Unable to locate thread. The following exception was raised: " + e)
         
         return thread
 
-    
-    def create_thread(self, username):
+
+    def get_thread_local(self, username: str, thread_id: str) -> Thread:
         """
         TODO: fill in docstring
         """
-        thread = self.assistant_manager.client.beta.threads.create()
+        thread_id = None
+        with shelve.open("threads_db") as threads_shelf:
+            thread_id = threads_shelf.get(username, None)        
+        
+        thread: Thread = self.get_thread_remote(thread_id)
+
+        return thread
+
+
+    def create_thread_remote(self):
+        """
+        TODO: fill in docstring
+        """
+        thread = None
+        try:
+            thread = self.assistant_manager.client.beta.threads.create()
+        except Exception as e:
+            print("Unable to create thread. The following exception was raised: " + e)
+        
+        return thread            
+
+
+    def create_thread_local(self, username: str, thread: Thread=None):
+        """
+        TODO: fill in docstring
+        """
+        if thread is None:
+            print("No thread provided. Creating a thread at remote.")
+            thread = self.create_thread_remote()
+        
+        with shelve.open("threads_db", writeback=True) as threads_shelf:
+        threads_shelf[username] = thread_id
         
         if not thread.id is None:
-            print(f"Thread created with id: {thread.id}.")
             print(f"Storing thread on shelf for username: {username}.")
             self.store_thread_on_shelf(username, thread.id)
         
@@ -124,7 +149,7 @@ class ThreadsManager:
         return thread
 
 
-    def get_thread_from_shelf(self, username):
+    def get_thread_from_shelf(self, thread_id: str, username: str, thread: Thread):
         """
         TODO: fill in docstring
         """
@@ -190,9 +215,8 @@ class ThreadsManager:
         return [msg.content[0].text.value for msg in raw_msg_list]
     
 
-    def get_thread_id_list_from_shelf(self):
-        thread_dict = self.read_shelf_to_dict()
-        return [thread_id for username, thread_id in thread_dict.items()]
+    def get_thread_id_list_local(self) -> list[str]:
+        return [thread_id for username, thread_id in self.local_threads.items()]
 
 
     def __repr__(self) -> str:
