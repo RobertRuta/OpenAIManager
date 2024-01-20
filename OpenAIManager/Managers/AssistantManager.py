@@ -41,7 +41,8 @@ class AssistantManager():
         """
         username = message.author
         
-        thread = self.thread_manager.get_thread(username)
+        thread_id = self.threads.get_thread_id_local(username)
+        thread = self.threads.get_thread_remote(thread_id)
 
         # Add message to thread
         message = self.client.beta.threads.messages.create(
@@ -83,7 +84,7 @@ class ThreadsManager:
         """
         self.assistant_manager = assistant_manager
         self.local_threads = self.get_threads_local()
-        self.local_thread_id_list = self.get_thread_id_list_from_shelf()
+        # self.local_thread_id_list = self.()
 
 
     def get_thread_remote(self, thread_id: str) -> Thread:
@@ -106,8 +107,9 @@ class ThreadsManager:
         thread_id = None
         if not username is None:
             thread_dict = self.get_threads_local()
-            thread_dict_by_username = {username: id for id, username in thread_dict.items()}
-            thread_id = thread_dict_by_username[username]
+            thread_id = thread_dict[username]
+            # thread_dict_by_username = {username: id for id, username in thread_dict.items()}
+            # thread_id = thread_dict_by_username[username]
         
         return thread_id
 

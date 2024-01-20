@@ -9,7 +9,7 @@ import OpenAIManager as ai
 
 # LOAD ENVIRONMENT VARIABLES
 load_dotenv()
-TOKEN: Final[str] = getenv("DISCORD_TOKEN")
+BOT_TOKEN: Final[str] = getenv("DISCORD_BOT_TOKEN")
 OPENAI_API_KEY: Final[str] = getenv("OPENAI_API_KEY")
 OPENAI_ASSISTANT_ID: Final[str] = getenv("OPENAI_ASSISTANT_ID")
 
@@ -31,7 +31,13 @@ async def on_ready() -> None:
 
 @client.event
 async def on_message(message: DiscordMessage) -> None:
+    print("Message detected.")
+    
     if message.author == client.user:
+        return
+    
+    if not "bot" in str(message.channel):
+        print("Message channel does not contain \'bot\' in it. ")
         return
     
     parsed_message = ai.Message(message)
@@ -41,7 +47,7 @@ async def on_message(message: DiscordMessage) -> None:
 
 
 def main() -> None: 
-    client.run(token=TOKEN)
+    client.run(token=BOT_TOKEN)
 
 
 if __name__=="__main__":
