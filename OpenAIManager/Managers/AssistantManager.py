@@ -2,9 +2,7 @@ from ..Helpers import AssistantParams, Message
 from openai import OpenAI
 import shelve
 import time
-import requests
 from openai.types.beta.thread import Thread # the Thread type
-import pandas as pd
 
 
 class AssistantManager():
@@ -56,7 +54,6 @@ class AssistantManager():
         run = self.client.beta.threads.runs.create(thread_id=thread.id, assistant_id=self.assistant.id)
 
         while run.status != "completed":
-            # Be nice to the API
             time.sleep(0.5)
             run = self.client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 
@@ -85,7 +82,7 @@ class ThreadsManager:
         TODO: fill in docstring
         """
         self.assistant_manager = assistant_manager
-        self.local_threads = self.read_shelf_to_dict()
+        self.local_threads = self.get_threads_local()
         self.local_thread_id_list = self.get_thread_id_list_from_shelf()
 
 
@@ -102,17 +99,17 @@ class ThreadsManager:
         return thread
 
 
-    def get_thread_local(self, username: str, thread_id: str) -> Thread:
+    def get_thread_id_local(self, username: str) -> str:
         """
         TODO: fill in docstring
         """
         thread_id = None
-        with shelve.open("threads_db") as threads_shelf:
-            thread_id = threads_shelf.get(username, None)        
+        if not username is None:
+            thread_dict = self.get_threads_local()
+            thread_dict_by_username = {username: id for id, username in thread_dict.items()}
+            thread_id = thread_dict_by_username[username]
         
-        thread: Thread = self.get_thread_remote(thread_id)
-
-        return thread
+        return thread_id
 
 
     def create_thread_remote(self):
@@ -128,69 +125,32 @@ class ThreadsManager:
         return thread            
 
 
-    def create_thread_local(self, username: str, thread: Thread=None):
+    def create_thread_local(self, thread: Thread=None, username: str=None):
         """
         TODO: fill in docstring
         """
         if thread is None:
-            print("No thread provided. Creating a thread at remote.")
+            print(f"No thread provided. Creating a new thread \'{thread.id}\' at remote.")
             thread = self.create_thread_remote()
         
-        with shelve.open("threads_db", writeback=True) as threads_shelf:
-        threads_shelf[username] = thread_id
-        
-        if not thread.id is None:
-            print(f"Storing thread on shelf for username: {username}.")
-            self.store_thread_on_shelf(username, thread.id)
+        if not thread is None:
+            found_thread_id = None
+
+            with shelve.open("threads_db", writeback=True) as threads_shelf:
+                print("Looking for thread in local shelve db.")
+                found_thread_id = threads_shelf.get(thread.id, None)
+
+                if found_thread_id is None:
+                    print("Did not find existing thread. Creating a new one...")
+                    threads_shelf[thread.id] = username            
         
         else:
-            print("Thread was not created. Returning None.")
+            print("Returning None.")
 
         return thread
 
 
-    def get_thread_from_shelf(self, thread_id: str, username: str, thread: Thread):
-        """
-        TODO: fill in docstring
-        """
-        thread = None
-        thread_id = self.find_thread_on_shelf(username)
-
-        if thread_id is None:
-            print(f"Could not find thread on shelf for username: {username}. Returning None.")
-            thread = None
-        
-        else:
-            print(f"Found thread for {username} with thread ID {thread_id} on shelf.")
-            thread = self.get_thread_from_openai(thread_id)
-
-        return thread
-    
-
-    def get_thread_from_openai(self, thread_id):
-        return self.assistant_manager.client.beta.threads.retrieve(thread_id)
-    
-
-    def find_thread_on_shelf(self, username):
-        """
-        TODO: fill in docstring
-        """
-        thread_id = None
-        with shelve.open("threads_db") as threads_shelf:
-            thread_id = threads_shelf.get(username, None)
-        
-        return thread_id
-        
-
-    def store_thread_on_shelf(self, username, thread_id):
-        """
-        TODO: fill in docstring
-        """
-        with shelve.open("threads_db", writeback=True) as threads_shelf:
-            threads_shelf[username] = thread_id
-
-
-    def read_shelf_to_dict(self) -> dict:
+    def get_threads_local(self) -> dict:
         """
         Reads the entire shelve database and returns its contents as a dictionary.
 
@@ -205,20 +165,16 @@ class ThreadsManager:
         return shelf_dict
     
 
-    def get_message_history(self, thread):
+    def get_messages_remote(self, thread):
         """
-        Gets the message history associated with a thread.
+        Gets the message history associated with a thread directly from openai.
 
         :return: History of messages as a list. Message at index 0 is the latest message.
         """
         raw_msg_list = self.assistant_manager.client.beta.threads.messages.list(thread.id)
         return [msg.content[0].text.value for msg in raw_msg_list]
-    
-
-    def get_thread_id_list_local(self) -> list[str]:
-        return [thread_id for username, thread_id in self.local_threads.items()]
 
 
     def __repr__(self) -> str:
-        shelf_dict = self.read_shelf_to_dict()
+        shelf_dict = self.get_threads_local()
         return str(shelf_dict)
