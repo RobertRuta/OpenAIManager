@@ -8,25 +8,31 @@ class Message():
     TODO: fill in docstring
     """
 
-    def __init__(self, message: any) -> None:
+    def __init__(self, message_text: str, thread_key: str=None, id: str=None, thread_id: str=None) -> None:
         """
         TODO: fill in docstring
         """
-        self.text = ""
-        self.author = ""
+        if message_text is None or len(message_text) == 0:
+            raise ValueError("No message body provided.")
 
-        if isinstance(message, DiscordMessage):
-            self.text = str(message.content)
-            self.author = str(message.author)
+        if thread_key is None:
+            thread_key = "None"
 
-        elif isinstance(message, str):
-            self.text = message
-            self.author = "default"
-            # self._str_message_parser(message)
-    
-    
-    def _str_message_parser(self, message_str: str):
-        raise NotImplementedError("Missing code.")
+        # self.files = files
+        self.thread_key = thread_key
+        self.message_text = message_text
+
+        self._id = id
+        self._thread_id = thread_id
+
+
+    def to_dict(self) -> str:
+        return {
+            "thread_id": self._thread_id,
+            "role": "user",
+            "content": self.message_text,
+            "file_ids": []
+        }
 
 
 
