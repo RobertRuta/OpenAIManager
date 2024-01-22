@@ -3,6 +3,7 @@ from typing import Final
 from dotenv import load_dotenv
 from discord import Intents, Client, Message as DiscordMessage
 from openai import OpenAI
+from datetime import datetime
 
 import OpenAIManager as ai
 
@@ -31,18 +32,41 @@ async def on_ready() -> None:
 
 @client.event
 async def on_message(message: DiscordMessage) -> None:
-    print("Message detected.")
+    print(f"\n---{datetime.now()}---\nMessage from {message.author}:\n\t"
+          + message.content)
     
     if message.author == client.user:
         return
     
-    if not "bot" in str(message.channel):
-        print("Message channel does not contain \'bot\' in it. ")
+    # if not "bot" in str(message.channel):
+    #     print("Message channel does not contain \'bot\' in it. ")
+    #     return
+    
+    if not message.content.startswith(client.user.mention):
+        await message.channel.send("(Make sure to mention me if you want a response. Rules are rules.)")
         return
     
-    parsed_message = ai.Message(message)
+    
+    print("------ Parsing the message.")
+    parsed_message = ai.Message(str(message.content), str(message.channel))
+    
+    if "\messages" in str(message.content):
+        thread_id = ai_assistant.threads.get_thread_id_local(parsed_message.thread_key)
+        thread = ai_assistant.threads.get_thread_remote(thread_id)
+        msg_history = ai_assistant.threads.get_messages_remote(thread)
+        response = "\n\n".join([f"{i}: {msg}" for i, msg in enumerate(msg_history[:5])])
+        await message.channel.send(response)
+        return
+    
+    print("------ Sending the parsed message.")
     response = ai_assistant.send_message(parsed_message)    
-    await message.channel.send(response)
+    
+    # Create a reply message formatted as a Discord reply box
+    # reply_message = f"> **Original Message from {message.author.display_name}:**\n> {message.content}\n\n{response}"
+    
+    print("------ Awaiting opportunity to serve response to channel.")
+    # await message.channel.send(reply_message)
+    await message.reply(response)
 
 
 
