@@ -39,17 +39,21 @@ class AssistantManager():
         """
         TODO: fill in docstring
         """
-        username = message.author
+        thread_key = message.thread_key        
+        thread_id = self.threads.get_thread_id_local(thread_key)
+        thread: Thread = None
+
+        if not thread_id is None:
+            thread = self.threads.get_thread_remote(thread_id)
+
+        else:
+            thread = self.threads.create_thread_remote()
+            self.threads.create_thread_local(thread, thread_key)
         
-        thread_id = self.threads.get_thread_id_local(username)
-        thread = self.threads.get_thread_remote(thread_id)
+        message._thread_id = thread.id
 
         # Add message to thread
-        message = self.client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=message.text,
-        )
+        message = self.client.beta.threads.messages.create(**message.to_dict())
         
         # Run the assistant
         run = self.client.beta.threads.runs.create(thread_id=thread.id, assistant_id=self.assistant.id)
@@ -59,8 +63,8 @@ class AssistantManager():
             run = self.client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 
         # Retrieve the Messages
-        messages = self.client.beta.threads.messages.list(thread_id=thread.id)
-        new_message = messages.data[0].content[0].text.value
+        messages = self.threads.get_messages_remote(thread)
+        new_message = messages[0]
         
         return new_message
 
@@ -95,19 +99,19 @@ class ThreadsManager:
         try:
             thread = self.assistant_manager.client.beta.threads.retrieve(thread_id)
         except Exception as e:
-            print("Unable to locate thread. The following exception was raised: " + e)
+            print("Unable to locate thread. The following exception was raised: " + str(e))
         
         return thread
 
 
-    def get_thread_id_local(self, username: str) -> str:
+    def get_thread_id_local(self, thread_key: str) -> str:
         """
         TODO: fill in docstring
         """
         thread_id = None
-        if not username is None:
+        if not thread_key is None:
             thread_dict = self.get_threads_local()
-            thread_id = thread_dict[username]
+            thread_id = thread_dict.get(thread_key, None)
             # thread_dict_by_username = {username: id for id, username in thread_dict.items()}
             # thread_id = thread_dict_by_username[username]
         
@@ -127,7 +131,7 @@ class ThreadsManager:
         return thread            
 
 
-    def create_thread_local(self, thread: Thread=None, username: str=None):
+    def create_thread_local(self, thread: Thread=None, thread_key: str=None):
         """
         TODO: fill in docstring
         """
@@ -140,11 +144,11 @@ class ThreadsManager:
 
             with shelve.open("threads_db", writeback=True) as threads_shelf:
                 print("Looking for thread in local shelve db.")
-                found_thread_id = threads_shelf.get(thread.id, None)
+                found_thread_id = threads_shelf.get(thread_key, None)
 
                 if found_thread_id is None:
                     print("Did not find existing thread. Creating a new one...")
-                    threads_shelf[thread.id] = username            
+                    threads_shelf[thread_key] = thread.id            
         
         else:
             print("Returning None.")
