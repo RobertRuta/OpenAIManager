@@ -1,5 +1,6 @@
-from .Managers.OpenAIManager import OpenAIManager
-from .Managers.AssistantManager import AssistantManager, ThreadsManager
+from .OpenAIManager import OpenAIManager
+from .AssistantManager import AssistantManager
+from .ThreadsManager import ThreadsManager
 from .Helpers import Message
 
 __all__ = ['OpenAIManager', 'AssistantManager', 'ThreadsManager', 'Message']

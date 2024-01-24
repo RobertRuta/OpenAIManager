@@ -1,5 +1,4 @@
-from discord import Message as DiscordMessage
-from .Managers.OpenAIManager import OpenAIManager
+from .OpenAIManager import OpenAIManager
 
 
 
