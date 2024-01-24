@@ -4,10 +4,10 @@ with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
 setup(
-    name='OpenAIManager',
-    version='0.1',
-    package_dir={'', 'src'},
-    packages=find_packages(where='src'),
+    name='openai-api-manager',
+    version='0.0.1',
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     install_requires=requirements,
     # metadata to display on PyPI
     author='Robert Ruta',
