@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenAIManager.Helpers &#8212; OpenAIManager 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for OpenAIManager.Helpers</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.OpenAIManager</span> <span class="kn">import</span> <span class="n">OpenAIManager</span>
+
+
+
+<div class="viewcode-block" id="Message">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.Helpers.Message">[docs]</a>
+<span class="k">class</span> <span class="nc">Message</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a message in a conversation with an OpenAI assistant.</span>
+
+<span class="sd">    This class encapsulates the data related to a single message, including its text,</span>
+<span class="sd">    associated thread key, and unique identifiers. It provides functionality to convert</span>
+<span class="sd">    the message data into a dictionary format suitable for API calls.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">thread_key</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_id</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the Message class.</span>
+
+<span class="sd">        :param message_text: The text content of the message.</span>
+<span class="sd">        :type message_text: str</span>
+<span class="sd">        :param thread_key: An optional key identifying the thread this message is associated with.</span>
+<span class="sd">        :type thread_key: str, optional</span>
+<span class="sd">        :param id: An optional unique identifier for the message.</span>
+<span class="sd">        :type id: str, optional</span>
+<span class="sd">        :param thread_id: An optional identifier for the thread this message belongs to.</span>
+<span class="sd">        :type thread_id: str, optional</span>
+
+<span class="sd">        :raises ValueError: If message_text is None or empty.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">message_text</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">message_text</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No message body provided.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">thread_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thread_key</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+
+        <span class="c1"># self.files = files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_key</span> <span class="o">=</span> <span class="n">thread_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_text</span> <span class="o">=</span> <span class="n">message_text</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread_id</span> <span class="o">=</span> <span class="n">thread_id</span>
+
+
+<div class="viewcode-block" id="Message.to_dict">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.Helpers.Message.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts the message data into a dictionary format.</span>
+
+<span class="sd">        This method is particularly useful for preparing the message data to be sent</span>
+<span class="sd">        through the OpenAI API. It structures the message content, role, and any file</span>
+<span class="sd">        attachments in a dictionary.</span>
+
+<span class="sd">        :return: A dictionary representation of the message.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread_id</span><span class="p">,</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">message_text</span><span class="p">,</span>
+            <span class="s2">&quot;file_ids&quot;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="AssistantParams">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.Helpers.AssistantParams">[docs]</a>
+<span class="k">class</span> <span class="nc">AssistantParams</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Encapsulates the parameters for creating or configuring an OpenAI assistant.</span>
+
+<span class="sd">    This class holds various configuration options for an OpenAI assistant, including</span>
+<span class="sd">    the model to be used, a name for the assistant, a description, instructions, and</span>
+<span class="sd">    any associated tools or file IDs. It supports converting these parameters into a</span>
+<span class="sd">    dictionary format suitable for API calls.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">openai_manager</span><span class="p">:</span> <span class="n">OpenAIManager</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;DefaultAssistant&quot;</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">instructions</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_ids</span><span class="p">:</span> <span class="nb">list</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a new instance of the AssistantParams class.</span>
+
+<span class="sd">        :param openai_manager: The OpenAIManager instance to validate the model availability.</span>
+<span class="sd">        :type openai_manager: OpenAIManager</span>
+<span class="sd">        :param model: The model name to be used by the assistant.</span>
+<span class="sd">        :type model: str</span>
+<span class="sd">        :param name: An optional name for the assistant.</span>
+<span class="sd">        :type name: str, optional</span>
+<span class="sd">        :param description: An optional description for the assistant.</span>
+<span class="sd">        :type description: str, optional</span>
+<span class="sd">        :param instructions: Optional instructions for the assistant.</span>
+<span class="sd">        :type instructions: str, optional</span>
+<span class="sd">        :param tools: Optional list of tools the assistant can use.</span>
+<span class="sd">        :type tools: list, optional</span>
+<span class="sd">        :param file_ids: Optional list of file IDs associated with the assistant.</span>
+<span class="sd">        :type file_ids: list, optional</span>
+
+<span class="sd">        :raises ValueError: If the provided model is not available in openai_manager.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">tools</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tools</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">file_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">file_ids</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">openai_manager</span><span class="o">.</span><span class="n">get_available_models</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Provided model &#39;</span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&#39; is not one of the available models.&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instructions</span> <span class="o">=</span> <span class="n">instructions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="o">=</span> <span class="n">tools</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_ids</span> <span class="o">=</span> <span class="n">file_ids</span>
+
+
+<div class="viewcode-block" id="AssistantParams.to_dict">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.Helpers.AssistantParams.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts the assistant parameters into a dictionary format.</span>
+
+<span class="sd">        This method structures the assistant&#39;s configuration options into a dictionary,</span>
+<span class="sd">        making it suitable for use in API calls or other configurations where a dictionary</span>
+<span class="sd">        representation is required.</span>
+
+<span class="sd">        :return: A dictionary representation of the assistant parameters.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="s1">&#39;instructions&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">instructions</span><span class="p">,</span>
+            <span class="s1">&#39;tools&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="p">,</span>
+            <span class="s1">&#39;file_ids&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_ids</span>
+        <span class="p">}</span></div>
+
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a string representation of the AssistantParams instance.</span>
+
+<span class="sd">        This method provides a convenient way to obtain a readable representation of</span>
+<span class="sd">        the assistant parameters, including its model, name, description, instructions,</span>
+<span class="sd">        tools, and file IDs.</span>
+
+<span class="sd">        :return: A string representation of the instance.</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;model=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="si">!r}</span><span class="s2">, name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;description=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">!r}</span><span class="s2">, instructions=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">instructions</span><span class="si">!r}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;tools=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="si">!r}</span><span class="s2">, file_ids=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_ids</span><span class="si">!r}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">OpenAIManager</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">OpenAIManager</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robert Ruta.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

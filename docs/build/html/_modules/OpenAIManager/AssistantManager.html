@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenAIManager.AssistantManager &#8212; OpenAIManager 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for OpenAIManager.AssistantManager</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.ThreadsManager</span> <span class="kn">import</span> <span class="n">ThreadsManager</span>
+<span class="kn">from</span> <span class="nn">.Helpers</span> <span class="kn">import</span> <span class="n">AssistantParams</span><span class="p">,</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="kn">from</span> <span class="nn">openai.types.beta.thread</span> <span class="kn">import</span> <span class="n">Thread</span> <span class="c1"># the openai Thread type</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+
+<div class="viewcode-block" id="AssistantManager">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.AssistantManager.AssistantManager">[docs]</a>
+<span class="k">class</span> <span class="nc">AssistantManager</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for managing openAI assistants. Handles assistant creation and message sending via this assistant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">OpenAI</span><span class="p">,</span> <span class="n">assistant_id</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">assistant_params</span><span class="p">:</span> <span class="n">AssistantParams</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates an AssistantManager object.</span>
+
+<span class="sd">        :param: client: OpenAi object that serves as a connection to the api.</span>
+<span class="sd">        :type client: openai.OpenAI</span>
+<span class="sd">        :param assistant_id: OpenAI assistant ID of existing assistant.</span>
+<span class="sd">        :type assistant_id: str</span>
+<span class="sd">        :param assistant_params: OpenAIManager.Helpers.AssistantParams object constitituting the parameters of an assistant.</span>
+<span class="sd">        :type assistant_params: AssistantManager</span>
+<span class="sd">        If provided when assistant_id was not, constructor will create assistant with the provided parameters.</span>
+
+<span class="sd">        :raises TypeError: If assistant_params is not of type AssistantParams.</span>
+<span class="sd">        :raises ValuError: If both assistant_id and assistant_params not provided.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Specify existing openai assistant</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">assistant_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">assistants</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">assistant_id</span><span class="p">)</span>
+        
+        <span class="c1"># Or create new assistant with provided assistant parameters</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">assistant_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assistant_params</span><span class="p">,</span> <span class="n">AssistantParams</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_assitant</span><span class="p">(</span><span class="n">assistant_params</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">assistant_params</span><span class="se">\&#39;</span><span class="s2"> must be of type </span><span class="se">\&#39;</span><span class="s2">AssistantParams</span><span class="se">\&#39;</span><span class="s2">.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Otherwise throw an error</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both </span><span class="se">\&#39;</span><span class="s2">assistant_id</span><span class="se">\&#39;</span><span class="s2"> and </span><span class="se">\&#39;</span><span class="s2">assistant_params</span><span class="se">\&#39;</span><span class="s2"> were left undefined. &quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;If you would like to create an assistant, please provide its parameters via </span><span class="se">\&#39;</span><span class="s2">assistant_params</span><span class="se">\&#39;</span><span class="s2">.&quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;Otherwise, specify an existing assistant using </span><span class="se">\&#39;</span><span class="s2">assistant_id</span><span class="se">\&#39;</span><span class="s2">.&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">threads</span> <span class="o">=</span> <span class="n">ThreadsManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">)</span>
+    
+
+<div class="viewcode-block" id="AssistantManager.send_message">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.AssistantManager.AssistantManager.send_message">[docs]</a>
+    <span class="k">def</span> <span class="nf">send_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends a message to the OpenAI Assistant and receives a response.</span>
+
+<span class="sd">        This method handles message sending to the OpenAI Assistant within a thread. </span>
+<span class="sd">        If the thread associated with the message does not exist, it creates a new thread remotely and locally. </span>
+<span class="sd">        It then adds the message to the thread and runs the assistant to generate a response.</span>
+<span class="sd">        The method waits until the assistant&#39;s run status is &#39;completed&#39; to ensure that a response is generated.</span>
+<span class="sd">        Finally, it retrieves and returns the new message from the assistant.</span>
+
+<span class="sd">        :param message: The message object containing the message to be sent.</span>
+<span class="sd">        :type message: Message</span>
+
+<span class="sd">        :raises: Various exceptions related to network issues, API errors, or unexpected response formats.</span>
+
+<span class="sd">        :return: The assistant&#39;s text response.</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">thread_key</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">thread_key</span>        
+        <span class="n">thread_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">get_thread_id_local</span><span class="p">(</span><span class="n">thread_key</span><span class="p">)</span>
+        <span class="n">thread</span><span class="p">:</span> <span class="n">Thread</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">thread_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">get_thread_remote</span><span class="p">(</span><span class="n">thread_id</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">create_thread_remote</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">create_thread_local</span><span class="p">(</span><span class="n">thread</span><span class="p">,</span> <span class="n">thread_key</span><span class="p">)</span>
+        
+        <span class="n">message</span><span class="o">.</span><span class="n">_thread_id</span> <span class="o">=</span> <span class="n">thread</span><span class="o">.</span><span class="n">id</span>
+
+        <span class="c1"># Add message to thread</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">message</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+        
+        <span class="c1"># Run the assistant</span>
+        <span class="n">run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">runs</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="n">thread</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">assistant_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">assistant</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;completed&quot;</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">runs</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="n">thread</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="n">run</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="c1"># Retrieve the Messages</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">get_messages_remote</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+        <span class="n">new_message</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">new_message</span></div>
+
+
+
+<div class="viewcode-block" id="AssistantManager.create_assitant">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.AssistantManager.AssistantManager.create_assitant">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_assitant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">AssistantParams</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new OpenAI Assistant based on provided AssistantParams object.</span>
+
+<span class="sd">        This method creates a new assistant using the OpenAI API. It takes the parameters</span>
+<span class="sd">        defined by the assistant, converts them into the appropriate format using the `to_dict` </span>
+<span class="sd">        method of the `AssistantParams` class, and then calls the OpenAI API to create the </span>
+<span class="sd">        assistant. The newly created assistant is returned.</span>
+
+<span class="sd">        :param params: Parameters for the assistant to be created.</span>
+<span class="sd">        :type params: AssistantParams</span>
+
+<span class="sd">        :raises TypeError: If params is not of type `AssistantParams`.</span>
+
+<span class="sd">        :return: The newly created assistant object.</span>
+<span class="sd">        :rtype: openai.types.beta.assistant.Assistant</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">assistants</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">OpenAIManager</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">OpenAIManager</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robert Ruta.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

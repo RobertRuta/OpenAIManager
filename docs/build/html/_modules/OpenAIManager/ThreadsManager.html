@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenAIManager.ThreadsManager &#8212; OpenAIManager 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for OpenAIManager.ThreadsManager</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="kn">from</span> <span class="nn">openai.types.beta.thread</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">import</span> <span class="nn">shelve</span>
+
+
+
+<div class="viewcode-block" id="ThreadsManager">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.ThreadsManager.ThreadsManager">[docs]</a>
+<span class="k">class</span> <span class="nc">ThreadsManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Manages the storage and retrieval of threads and messages for an OpenAI application.</span>
+
+<span class="sd">    This class handles the interactions between local storage and the remote OpenAI API, </span>
+<span class="sd">    specifically focusing on thread management. It provides methods to create, retrieve, </span>
+<span class="sd">    and manage threads both locally and remotely. Due to API limitations and the current </span>
+<span class="sd">    scope of the class design, it lacks functionality to fetch all threads directly from </span>
+<span class="sd">    the remote server, and its capabilities are primarily centered around individual </span>
+<span class="sd">    management of known threads.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">OpenAI</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the ThreadsManager with a client for OpenAI API interactions.</span>
+
+<span class="sd">        This constructor sets up the manager with an OpenAI client and initializes </span>
+<span class="sd">        local storage for thread tracking. It loads existing thread data from local </span>
+<span class="sd">        storage upon instantiation.</span>
+
+<span class="sd">        :param client: The OpenAI client used for API interactions.</span>
+<span class="sd">        :type client: openai.OpenAI</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_threads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_threads_local</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="ThreadsManager.get_thread_remote">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.ThreadsManager.ThreadsManager.get_thread_remote">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_thread_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Thread</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a specific thread from the remote OpenAI server using its ID.</span>
+
+<span class="sd">        This method attempts to fetch a thread from the OpenAI API. If the thread does </span>
+<span class="sd">        not exist or an error occurs during retrieval, an exception is caught and handled.</span>
+
+<span class="sd">        :param thread_id: The unique identifier of the thread to retrieve.</span>
+<span class="sd">        :type thread_id: str</span>
+
+<span class="sd">        :return: The retrieved thread or None if not found or an error occurs.</span>
+<span class="sd">        :rtype: openai.types.beta.thread.Thread or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">thread</span><span class="p">:</span> <span class="n">Thread</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">thread_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to locate thread. The following exception was raised: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">thread</span></div>
+
+
+
+<div class="viewcode-block" id="ThreadsManager.get_thread_id_local">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.ThreadsManager.ThreadsManager.get_thread_id_local">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_thread_id_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the ID of a local thread based on a provided \&quot;thread key\&quot;.</span>
+
+<span class="sd">        This method looks up a thread&#39;s ID in the local shelve database using the provided </span>
+<span class="sd">        thread key. If the thread key does not exist in the local storage, None is returned.</span>
+
+<span class="sd">        :param thread_key: The key used to identify the thread in local storage.</span>
+<span class="sd">        :type thread_key: str</span>
+
+<span class="sd">        :return: The ID of the thread associated with the given key, or None if not found.</span>
+<span class="sd">        :rtype: str or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">thread_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">thread_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thread_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_threads_local</span><span class="p">()</span>
+            <span class="n">thread_id</span> <span class="o">=</span> <span class="n">thread_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">thread_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">thread_id</span></div>
+
+
+
+<div class="viewcode-block" id="ThreadsManager.create_thread_remote">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.ThreadsManager.ThreadsManager.create_thread_remote">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_thread_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new thread on the remote OpenAI server.</span>
+
+<span class="sd">        This method attempts to create a new thread using the OpenAI API. If an error </span>
+<span class="sd">        occurs during creation, it is printed and the thread is left as None.</span>
+
+<span class="sd">        :return: The created thread or None if an error occurs.</span>
+<span class="sd">        :rtype: Thread or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">thread</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to create thread. The following exception was raised: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">thread</span>            </div>
+
+
+
+<div class="viewcode-block" id="ThreadsManager.create_thread_local">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.ThreadsManager.ThreadsManager.create_thread_local">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_thread_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread</span><span class="p">:</span> <span class="n">Thread</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_key</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new thread in local storage or updates an existing one.</span>
+
+<span class="sd">        This method adds a new thread to local storage using the provided thread object </span>
+<span class="sd">        and key. If the thread is not provided, a new one is created remotely. If the </span>
+<span class="sd">        thread already exists in local storage, it is updated.</span>
+
+<span class="sd">        :param thread: The thread object to store or update locally.</span>
+<span class="sd">        :type thread: Thread, optional</span>
+<span class="sd">        :param thread_key: The key to associate with the thread in local storage.</span>
+<span class="sd">        :type thread_key: str, optional</span>
+
+<span class="sd">        :return: The thread object after creation or update.</span>
+<span class="sd">        :rtype: Thread</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">thread</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No thread provided. Creating a new thread </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">thread</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="se">\&#39;</span><span class="s2"> at remote.&quot;</span><span class="p">)</span>
+            <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_thread_remote</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">thread</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">found_thread_id</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">with</span> <span class="n">shelve</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;threads_db&quot;</span><span class="p">,</span> <span class="n">writeback</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">threads_shelf</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Looking for thread in local shelve db.&quot;</span><span class="p">)</span>
+                <span class="n">found_thread_id</span> <span class="o">=</span> <span class="n">threads_shelf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">thread_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">found_thread_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Did not find existing thread. Creating a new one...&quot;</span><span class="p">)</span>
+                    <span class="n">threads_shelf</span><span class="p">[</span><span class="n">thread_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">thread</span><span class="o">.</span><span class="n">id</span>            
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Returning None.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">thread</span></div>
+
+
+
+<div class="viewcode-block" id="ThreadsManager.get_threads_local">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.ThreadsManager.ThreadsManager.get_threads_local">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_threads_local</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all threads stored in local storage.</span>
+
+<span class="sd">        This method reads the entire local shelve database and returns its contents </span>
+<span class="sd">        as a dictionary. The dictionary maps thread keys to thread IDs.</span>
+
+<span class="sd">        :return: A dictionary of thread keys and their corresponding IDs.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shelf_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">with</span> <span class="n">shelve</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;threads_db&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">threads_shelf</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">threads_shelf</span><span class="p">:</span>
+                <span class="n">shelf_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">threads_shelf</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_thread_dict</span> <span class="o">=</span> <span class="n">shelf_dict</span>
+        <span class="k">return</span> <span class="n">shelf_dict</span></div>
+
+    
+
+<div class="viewcode-block" id="ThreadsManager.get_messages_remote">
+<a class="viewcode-back" href="../../OpenAIManager.html#OpenAIManager.ThreadsManager.ThreadsManager.get_messages_remote">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_messages_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the message history for a given thread from the OpenAI API.</span>
+
+<span class="sd">        This method fetches the message history associated with the specified thread </span>
+<span class="sd">        directly from the OpenAI server. The messages are returned in a list, with the </span>
+<span class="sd">        latest message at index 0.</span>
+
+<span class="sd">        :param thread: The thread object for which to retrieve messages.</span>
+<span class="sd">        :type thread: Thread</span>
+
+<span class="sd">        :return: A list of messages from the thread, latest first.</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raw_msg_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">thread</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">raw_msg_list</span><span class="p">]</span></div>
+
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a string representation of the current state of local thread storage.</span>
+
+<span class="sd">        This method generates a string representation of the threads currently stored </span>
+<span class="sd">        in local storage, providing a quick overview of the thread keys and their </span>
+<span class="sd">        corresponding IDs.</span>
+
+<span class="sd">        :return: A string representation of the local thread storage.</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shelf_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_threads_local</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">shelf_dict</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">OpenAIManager</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">OpenAIManager</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Robert Ruta.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
