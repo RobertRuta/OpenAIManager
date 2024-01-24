@@ -1,6 +1,8 @@
 **__pycache__/
 .venv/
 
-playground/OpenAIManager_demo.ipynb
 .env
 threads_db*
+
+**.ipynb
+!*OpenAIManager_demo_template.ipynb
