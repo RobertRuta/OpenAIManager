@@ -1,5 +1,5 @@
-from .ThreadsManager import ThreadsManager
-from .Helpers import AssistantParams, Message
+from .threads_manager import ThreadsManager
+from .helpers import AssistantParams, Message
 from openai import OpenAI
 from openai.types.beta.thread import Thread # the openai Thread type
 import time
