@@ -7,6 +7,14 @@ from datetime import datetime
 from discord.ext import commands
 from discord import errors
 
+import sys
+from pathlib import Path
+
+### Ensure OpenAIManager package is visible
+parent_dir = Path(__file__).parent.parent
+src_path = parent_dir / 'src'
+sys.path.append(str(src_path))
+
 import OpenAIManager as ai
 
 
