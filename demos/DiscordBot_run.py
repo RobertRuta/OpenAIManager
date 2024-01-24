@@ -34,7 +34,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 openAI_client = OpenAI(api_key=OPENAI_API_KEY)
-ai_assistant = ai.assistant_manager(openAI_client, OPENAI_ASSISTANT_ID)
+ai_assistant = ai.AssistantManager(openAI_client, OPENAI_ASSISTANT_ID)
 
 
 # BOT STARTUP

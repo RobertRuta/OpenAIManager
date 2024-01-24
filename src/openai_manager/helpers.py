@@ -1,4 +1,4 @@
-from .OpenAIManager import OpenAIManager
+from .openai_manager import OpenAIManager
 
 
 
