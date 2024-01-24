@@ -8,12 +8,26 @@ import time
 
 class AssistantManager():
     """
-    TODO: fill in docstring
+    A class for managing openAI assistants. Handles assistant creation and message sending via this assistant.
     """
 
     def __init__(self, client: OpenAI, assistant_id: str=None, assistant_params: AssistantParams=None) -> None:
         """
-        TODO: fill in docstring
+        Creates an AssistantManager object.
+
+        :param: client: OpenAi object that serves as a connection to the api.
+        :type client: openai.OpenAI
+        :param assistant_id: OpenAI assistant ID of existing assistant.
+        :type assistant_id: str
+        :param assistant_params: OpenAIManager.Helpers.AssistantParams object constitituting the parameters of an assistant.
+        :type assistant_params: AssistantManager
+        If provided when assistant_id was not, constructor will create assistant with the provided parameters.
+
+        :raises TypeError: If assistant_params is not of type AssistantParams.
+        :raises ValuError: If both assistant_id and assistant_params not provided.
+
+        :return: None
+        :rtype: None
         """
         self.client = client
         self.assistant = None
@@ -24,8 +38,11 @@ class AssistantManager():
             self.assistant = client.beta.assistants.retrieve(assistant_id)
         
         # Or create new assistant with provided assistant parameters
-        elif not assistant_params is None:      
-            self.assistant = self.create_assitant(assistant_params)
+        elif not assistant_params is None:
+            if isinstance(assistant_params, AssistantParams):
+                self.assistant = self.create_assitant(assistant_params)
+            else:
+                raise TypeError("\'assistant_params\' must be of type \'AssistantParams\'.")
         
         # Otherwise throw an error
         else:
@@ -36,9 +53,23 @@ class AssistantManager():
         self.threads = ThreadsManager(self.client)
     
 
-    def send_message(self, message: Message):
+    def send_message(self, message: Message) -> str:
         """
-        TODO: fill in docstring
+        Sends a message to the OpenAI Assistant and receives a response.
+
+        This method handles message sending to the OpenAI Assistant within a thread. 
+        If the thread associated with the message does not exist, it creates a new thread remotely and locally. 
+        It then adds the message to the thread and runs the assistant to generate a response.
+        The method waits until the assistant's run status is 'completed' to ensure that a response is generated.
+        Finally, it retrieves and returns the new message from the assistant.
+
+        :param message: The message object containing the message to be sent.
+        :type message: Message
+
+        :raises: Various exceptions related to network issues, API errors, or unexpected response formats.
+
+        :return: The assistant's text response.
+        :rtype: str
         """
         thread_key = message.thread_key        
         thread_id = self.threads.get_thread_id_local(thread_key)
@@ -72,6 +103,19 @@ class AssistantManager():
 
     def create_assitant(self, params: AssistantParams):
         """
-        TODO: fill in docstring
+        Creates a new OpenAI Assistant based on provided AssistantParams object.
+
+        This method creates a new assistant using the OpenAI API. It takes the parameters
+        defined by the assistant, converts them into the appropriate format using the `to_dict` 
+        method of the `AssistantParams` class, and then calls the OpenAI API to create the 
+        assistant. The newly created assistant is returned.
+
+        :param params: Parameters for the assistant to be created.
+        :type params: AssistantParams
+
+        :raises TypeError: If params is not of type `AssistantParams`.
+
+        :return: The newly created assistant object.
+        :rtype: openai.types.beta.assistant.Assistant
         """
         return self.client.beta.assistants.create(**params.to_dict())
