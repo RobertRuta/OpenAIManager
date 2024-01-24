@@ -2,11 +2,12 @@ from setuptools import setup, find_packages
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
-    
+
 setup(
     name='OpenAIManager',
     version='0.1',
-    packages=find_packages(),
+    package_dir={'', 'src'},
+    packages=find_packages(where='src'),
     install_requires=requirements,
     # metadata to display on PyPI
     author='Robert Ruta',

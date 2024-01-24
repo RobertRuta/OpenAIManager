@@ -14,3 +14,4 @@ global-exclude *.pyc
 global-exclude __pycache__/*
 global-exclude .env
 global-exclude .gitignore
+global-exclude *.egg-info
