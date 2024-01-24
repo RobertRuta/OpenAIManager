@@ -15,7 +15,7 @@ parent_dir = Path(__file__).parent.parent
 src_path = parent_dir / 'src'
 sys.path.append(str(src_path))
 
-import OpenAIManager as ai
+import openai_manager as ai
 
 
 # LOAD ENVIRONMENT VARIABLES
@@ -34,7 +34,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 openAI_client = OpenAI(api_key=OPENAI_API_KEY)
-ai_assistant = ai.AssistantManager(openAI_client, OPENAI_ASSISTANT_ID)
+ai_assistant = ai.assistant_manager(openAI_client, OPENAI_ASSISTANT_ID)
 
 
 # BOT STARTUP
