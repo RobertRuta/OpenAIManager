@@ -5,10 +5,11 @@ with open('requirements.txt') as f:
 
 setup(
     name='openai-api-manager',
-    version='0.0.1',
+    version='0.0.6',
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=requirements,
+    python_rqeuires='>=3.8',
     # metadata to display on PyPI
     author='Robert Ruta',
     author_email='robertruta50@gmail.com',
@@ -23,6 +24,10 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
     ],
     include_package_data=True
