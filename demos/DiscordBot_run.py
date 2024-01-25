@@ -1,5 +1,4 @@
 from os import getenv
-from typing import Final
 from dotenv import load_dotenv
 from discord import Intents, Client, Message as DiscordMessage
 from openai import OpenAI
@@ -20,9 +19,9 @@ import openai_manager as ai
 
 # LOAD ENVIRONMENT VARIABLES
 load_dotenv()
-BOT_TOKEN: Final[str] = getenv("DISCORD_BOT_TOKEN")
-OPENAI_API_KEY: Final[str] = getenv("OPENAI_API_KEY")
-OPENAI_ASSISTANT_ID: Final[str] = getenv("OPENAI_ASSISTANT_ID")
+BOT_TOKEN = getenv("DISCORD_BOT_TOKEN")
+OPENAI_API_KEY = getenv("OPENAI_API_KEY")
+OPENAI_ASSISTANT_ID = getenv("OPENAI_ASSISTANT_ID")
 
 
 # BOT SETUP
