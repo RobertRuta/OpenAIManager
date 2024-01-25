@@ -6,7 +6,7 @@ recursive-include demos *
 recursive-include src *
 
 # Exclusions
-prune .venv
+prune .venv*
 prune tests
 prune build
 prune dist
@@ -16,3 +16,4 @@ global-exclude .env
 global-exclude .gitignore
 global-exclude *.egg-info
 global-exclude .pypirc
+global-exclude *threads_db*
